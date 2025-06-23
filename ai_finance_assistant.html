@@ -1,0 +1,852 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FinanceAI - Your Personal Finance Assistant</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/chart.js/3.9.1/chart.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            backdrop-filter: blur(10px);
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            background: linear-gradient(45deg, #fff, #f0f8ff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .dashboard {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 20px;
+        }
+
+        .card {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 45px rgba(0, 0, 0, 0.15);
+        }
+
+        .card h3 {
+            color: #667eea;
+            margin-bottom: 20px;
+            font-size: 1.3em;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .icon {
+            width: 24px;
+            height: 24px;
+            display: inline-block;
+        }
+
+        .balance-display {
+            font-size: 2.5em;
+            font-weight: bold;
+            color: #2d5016;
+            margin: 15px 0;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .metric {
+            display: flex;
+            justify-content: space-between;
+            margin: 10px 0;
+            padding: 10px;
+            background: rgba(102, 126, 234, 0.1);
+            border-radius: 8px;
+        }
+
+        .metric-value {
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .transaction-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px;
+            margin: 8px 0;
+            background: rgba(0, 0, 0, 0.02);
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+        }
+
+        .transaction-amount {
+            font-weight: bold;
+        }
+
+        .positive { color: #28a745; }
+        .negative { color: #dc3545; }
+
+        .advice-item {
+            background: linear-gradient(135deg, #f8f9ff, #e8eaff);
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 10px;
+            border-left: 4px solid #667eea;
+        }
+
+        .advice-priority {
+            font-size: 0.8em;
+            background: #667eea;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 12px;
+            display: inline-block;
+            margin-bottom: 8px;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1em;
+            transition: all 0.3s ease;
+            margin: 5px;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .input-group {
+            margin: 15px 0;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .input-group input, .input-group select {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #e1e5e9;
+            border-radius: 8px;
+            font-size: 1em;
+            transition: border-color 0.3s ease;
+        }
+
+        .input-group input:focus, .input-group select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .chart-container {
+            position: relative;
+            height: 300px;
+            margin: 20px 0;
+        }
+
+        .goal-progress {
+            background: #e9ecef;
+            border-radius: 10px;
+            height: 20px;
+            margin: 10px 0;
+            overflow: hidden;
+        }
+
+        .goal-progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            border-radius: 10px;
+            transition: width 0.5s ease;
+        }
+
+        .prediction-card {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border-radius: 15px;
+            padding: 20px;
+            margin: 15px 0;
+        }
+
+        .prediction-value {
+            font-size: 1.8em;
+            font-weight: bold;
+            margin: 10px 0;
+        }
+
+        .tabs {
+            display: flex;
+            margin-bottom: 20px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 5px;
+        }
+
+        .tab {
+            flex: 1;
+            padding: 10px;
+            text-align: center;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            color: white;
+        }
+
+        .tab.active {
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(10px);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        @media (max-width: 768px) {
+            .dashboard {
+                grid-template-columns: 1fr;
+            }
+            
+            .header h1 {
+                font-size: 2em;
+            }
+            
+            .balance-display {
+                font-size: 2em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🤖 FinanceAI</h1>
+            <p>Your Intelligent Personal Finance Assistant</p>
+        </div>
+
+        <div class="tabs">
+            <div class="tab active" onclick="switchTab('overview')">Overview</div>
+            <div class="tab" onclick="switchTab('transactions')">Transactions</div>
+            <div class="tab" onclick="switchTab('goals')">Goals</div>
+            <div class="tab" onclick="switchTab('predictions')">AI Predictions</div>
+        </div>
+
+        <div id="overview" class="tab-content active">
+            <div class="dashboard">
+                <div class="card">
+                    <h3>
+                        <span class="icon">💰</span>
+                        Account Balance
+                    </h3>
+                    <div class="balance-display" id="balance">$12,458.32</div>
+                    <div class="metric">
+                        <span>Monthly Change:</span>
+                        <span class="metric-value positive">+$543.21</span>
+                    </div>
+                    <div class="metric">
+                        <span>Available Credit:</span>
+                        <span class="metric-value">$8,541.68</span>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3>
+                        <span class="icon">📊</span>
+                        Monthly Spending Analysis
+                    </h3>
+                    <div class="chart-container">
+                        <canvas id="spendingChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3>
+                        <span class="icon">🧠</span>
+                        AI Financial Insights
+                    </h3>
+                    <div class="advice-item">
+                        <div class="advice-priority">High Priority</div>
+                        <strong>Reduce Dining Out Expenses</strong>
+                        <p>You've spent 23% more on restaurants this month. Consider meal planning to save ~$180/month.</p>
+                    </div>
+                    <div class="advice-item">
+                        <div class="advice-priority">Medium Priority</div>
+                        <strong>Emergency Fund Goal</strong>
+                        <p>You're 67% towards your 6-month emergency fund. Great progress! Consider automating savings.</p>
+                    </div>
+                    <div class="advice-item">
+                        <div class="advice-priority">Low Priority</div>
+                        <strong>Investment Opportunity</strong>
+                        <p>Based on your risk profile, consider increasing your retirement contributions by 2%.</p>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3>
+                        <span class="icon">🎯</span>
+                        Financial Health Score
+                    </h3>
+                    <div style="text-align: center;">
+                        <div style="font-size: 3em; color: #28a745; font-weight: bold;">78</div>
+                        <p style="color: #28a745; font-weight: bold;">Good Financial Health</p>
+                        <div class="goal-progress">
+                            <div class="goal-progress-bar" style="width: 78%;"></div>
+                        </div>
+                        <p style="margin-top: 10px; font-size: 0.9em;">
+                            Factors: Spending habits (85%), Savings rate (72%), Debt ratio (76%)
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="transactions" class="tab-content">
+            <div class="dashboard">
+                <div class="card" style="grid-column: 1 / -1;">
+                    <h3>
+                        <span class="icon">💳</span>
+                        Add New Transaction
+                    </h3>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
+                        <div class="input-group">
+                            <label>Description</label>
+                            <input type="text" id="transDesc" placeholder="e.g., Grocery shopping">
+                        </div>
+                        <div class="input-group">
+                            <label>Amount</label>
+                            <input type="number" id="transAmount" placeholder="0.00" step="0.01">
+                        </div>
+                        <div class="input-group">
+                            <label>Category</label>
+                            <select id="transCategory">
+                                <option>Food & Dining</option>
+                                <option>Transportation</option>
+                                <option>Shopping</option>
+                                <option>Entertainment</option>
+                                <option>Bills & Utilities</option>
+                                <option>Healthcare</option>
+                                <option>Income</option>
+                                <option>Other</option>
+                            </select>
+                        </div>
+                        <div class="input-group">
+                            <label>Type</label>
+                            <select id="transType">
+                                <option value="expense">Expense</option>
+                                <option value="income">Income</option>
+                            </select>
+                        </div>
+                    </div>
+                    <button class="btn" onclick="addTransaction()">Add Transaction</button>
+                </div>
+
+                <div class="card">
+                    <h3>
+                        <span class="icon">📝</span>
+                        Recent Transactions
+                    </h3>
+                    <div id="transactionList">
+                        <div class="transaction-item">
+                            <div>
+                                <strong>Whole Foods</strong>
+                                <div style="font-size: 0.9em; color: #666;">Food & Dining • Today</div>
+                            </div>
+                            <div class="transaction-amount negative">-$67.32</div>
+                        </div>
+                        <div class="transaction-item">
+                            <div>
+                                <strong>Salary Deposit</strong>
+                                <div style="font-size: 0.9em; color: #666;">Income • Yesterday</div>
+                            </div>
+                            <div class="transaction-amount positive">+$3,200.00</div>
+                        </div>
+                        <div class="transaction-item">
+                            <div>
+                                <strong>Netflix Subscription</strong>
+                                <div style="font-size: 0.9em; color: #666;">Entertainment • 2 days ago</div>
+                            </div>
+                            <div class="transaction-amount negative">-$15.99</div>
+                        </div>
+                        <div class="transaction-item">
+                            <div>
+                                <strong>Gas Station</strong>
+                                <div style="font-size: 0.9em; color: #666;">Transportation • 3 days ago</div>
+                            </div>
+                            <div class="transaction-amount negative">-$45.20</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3>
+                        <span class="icon">📈</span>
+                        Category Breakdown
+                    </h3>
+                    <div class="chart-container">
+                        <canvas id="categoryChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="goals" class="tab-content">
+            <div class="dashboard">
+                <div class="card" style="grid-column: 1 / -1;">
+                    <h3>
+                        <span class="icon">🎯</span>
+                        Set New Financial Goal
+                    </h3>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px;">
+                        <div class="input-group">
+                            <label>Goal Name</label>
+                            <input type="text" id="goalName" placeholder="e.g., Emergency Fund">
+                        </div>
+                        <div class="input-group">
+                            <label>Target Amount</label>
+                            <input type="number" id="goalTarget" placeholder="10000" step="100">
+                        </div>
+                        <div class="input-group">
+                            <label>Current Amount</label>
+                            <input type="number" id="goalCurrent" placeholder="2500" step="50">
+                        </div>
+                        <div class="input-group">
+                            <label>Target Date</label>
+                            <input type="date" id="goalDate">
+                        </div>
+                    </div>
+                    <button class="btn" onclick="addGoal()">Add Goal</button>
+                </div>
+
+                <div class="card">
+                    <h3>
+                        <span class="icon">🏆</span>
+                        Emergency Fund
+                    </h3>
+                    <div class="metric">
+                        <span>Progress:</span>
+                        <span class="metric-value">$6,700 / $10,000</span>
+                    </div>
+                    <div class="goal-progress">
+                        <div class="goal-progress-bar" style="width: 67%;"></div>
+                    </div>
+                    <p style="margin-top: 10px; font-size: 0.9em;">
+                        67% complete • On track to finish by Dec 2025
+                    </p>
+                </div>
+
+                <div class="card">
+                    <h3>
+                        <span class="icon">🏖️</span>
+                        Vacation Fund
+                    </h3>
+                    <div class="metric">
+                        <span>Progress:</span>
+                        <span class="metric-value">$1,250 / $3,000</span>
+                    </div>
+                    <div class="goal-progress">
+                        <div class="goal-progress-bar" style="width: 42%;"></div>
+                    </div>
+                    <p style="margin-top: 10px; font-size: 0.9em;">
+                        42% complete • Need $125/month to reach goal
+                    </p>
+                </div>
+
+                <div class="card">
+                    <h3>
+                        <span class="icon">🏠</span>
+                        House Down Payment
+                    </h3>
+                    <div class="metric">
+                        <span>Progress:</span>
+                        <span class="metric-value">$12,500 / $50,000</span>
+                    </div>
+                    <div class="goal-progress">
+                        <div class="goal-progress-bar" style="width: 25%;"></div>
+                    </div>
+                    <p style="margin-top: 10px; font-size: 0.9em;">
+                        25% complete • Consider increasing monthly contribution
+                    </p>
+                </div>
+
+                <div class="card" id="goalsList">
+                    <h3>
+                        <span class="icon">📋</span>
+                        Your Goals
+                    </h3>
+                    <p style="color: #666; font-style: italic;">Your custom goals will appear here...</p>
+                </div>
+            </div>
+        </div>
+
+        <div id="predictions" class="tab-content">
+            <div class="dashboard">
+                <div class="card prediction-card">
+                    <h3>
+                        <span class="icon">🔮</span>
+                        6-Month Financial Forecast
+                    </h3>
+                    <div class="prediction-value">Projected Balance: $15,243</div>
+                    <p>Based on current spending patterns and income trends, your account balance is expected to grow by $2,785 over the next 6 months.</p>
+                </div>
+
+                <div class="card prediction-card">
+                    <h3>
+                        <span class="icon">⚠️</span>
+                        Risk Assessment
+                    </h3>
+                    <div class="prediction-value">Low Risk</div>
+                    <p>Your spending variability is 12% below average. Emergency fund coverage provides 4.2 months of expenses.</p>
+                </div>
+
+                <div class="card">
+                    <h3>
+                        <span class="icon">📊</span>
+                        Spending Predictions
+                    </h3>
+                    <div class="chart-container">
+                        <canvas id="predictionChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3>
+                        <span class="icon">💡</span>
+                        AI Recommendations
+                    </h3>
+                    <div class="advice-item">
+                        <strong>Optimize Investment Portfolio</strong>
+                        <p>Based on market analysis, consider rebalancing your portfolio to include 15% more tech stocks and 10% less bonds.</p>
+                    </div>
+                    <div class="advice-item">
+                        <strong>Tax Optimization</strong>
+                        <p>You could save ~$340 annually by maximizing your HSA contributions and using tax-loss harvesting.</p>
+                    </div>
+                    <div class="advice-item">
+                        <strong>Subscription Audit</strong>
+                        <p>AI detected 3 rarely-used subscriptions totaling $47/month. Consider canceling to save $564/year.</p>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3>
+                        <span class="icon">🎯</span>
+                        Goal Achievement Probability
+                    </h3>
+                    <div class="metric">
+                        <span>Emergency Fund (Dec 2025):</span>
+                        <span class="metric-value" style="color: #28a745;">87% likely</span>
+                    </div>
+                    <div class="metric">
+                        <span>Vacation Fund (Jun 2025):</span>
+                        <span class="metric-value" style="color: #ffc107;">64% likely</span>
+                    </div>
+                    <div class="metric">
+                        <span>House Down Payment (2027):</span>
+                        <span class="metric-value" style="color: #28a745;">92% likely</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Global variables
+        let transactions = [];
+        let goals = [];
+        let currentBalance = 12458.32;
+
+        // Initialize charts
+        let spendingChart, categoryChart, predictionChart;
+
+        // Tab switching functionality
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            
+            event.target.classList.add('active');
+            document.getElementById(tabName).classList.add('active');
+            
+            // Initialize charts when tabs are switched
+            setTimeout(() => {
+                if (tabName === 'overview') initSpendingChart();
+                if (tabName === 'transactions') initCategoryChart();
+                if (tabName === 'predictions') initPredictionChart();
+            }, 100);
+        }
+
+        // Initialize spending chart
+        function initSpendingChart() {
+            const ctx = document.getElementById('spendingChart');
+            if (spendingChart) spendingChart.destroy();
+            
+            spendingChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+                    datasets: [{
+                        label: 'Monthly Spending',
+                        data: [2340, 2890, 2156, 2456, 2789, 2234],
+                        borderColor: '#667eea',
+                        backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                        tension: 0.4,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(value) {
+                                    return '$' + value;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Initialize category chart
+        function initCategoryChart() {
+            const ctx = document.getElementById('categoryChart');
+            if (categoryChart) categoryChart.destroy();
+            
+            categoryChart = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Food & Dining', 'Transportation', 'Shopping', 'Bills', 'Entertainment'],
+                    datasets: [{
+                        data: [890, 340, 567, 1200, 234],
+                        backgroundColor: [
+                            '#667eea',
+                            '#764ba2',
+                            '#f093fb',
+                            '#f5576c',
+                            '#4facfe'
+                        ]
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        }
+                    }
+                }
+            });
+        }
+
+        // Initialize prediction chart
+        function initPredictionChart() {
+            const ctx = document.getElementById('predictionChart');
+            if (predictionChart) predictionChart.destroy();
+            
+            predictionChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: ['Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+                    datasets: [{
+                        label: 'Predicted Spending',
+                        data: [2200, 2350, 2180, 2400, 2500, 2150],
+                        borderColor: '#667eea',
+                        backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                        borderDash: [5, 5],
+                        tension: 0.4
+                    }, {
+                        label: 'Actual Spending',
+                        data: [2234, 2456, null, null, null, null],
+                        borderColor: '#28a745',
+                        backgroundColor: 'rgba(40, 167, 69, 0.1)',
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(value) {
+                                    return '$' + value;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Add transaction functionality
+        function addTransaction() {
+            const desc = document.getElementById('transDesc').value;
+            const amount = parseFloat(document.getElementById('transAmount').value);
+            const category = document.getElementById('transCategory').value;
+            const type = document.getElementById('transType').value;
+
+            if (!desc || !amount) {
+                alert('Please fill in all fields');
+                return;
+            }
+
+            const transaction = {
+                id: Date.now(),
+                description: desc,
+                amount: type === 'expense' ? -Math.abs(amount) : Math.abs(amount),
+                category: category,
+                date: new Date().toLocaleDateString(),
+                type: type
+            };
+
+            transactions.unshift(transaction);
+            updateBalance(transaction.amount);
+            renderTransactions();
+            clearTransactionForm();
+            
+            // Update charts
+            if (categoryChart) {
+                updateCategoryChart();
+            }
+        }
+
+        // Update balance
+        function updateBalance(amount) {
+            currentBalance += amount;
+            document.getElementById('balance').textContent = '$' + currentBalance.toLocaleString('en-US', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            });
+        }
+
+        // Render transactions
+        function renderTransactions() {
+            const list = document.getElementById('transactionList');
+            list.innerHTML = '';
+
+            transactions.slice(0, 10).forEach(transaction => {
+                const item = document.createElement('div');
+                item.className = 'transaction-item';
+                item.innerHTML = `
+                    <div>
+                        <strong>${transaction.description}</strong>
+                        <div style="font-size: 0.9em; color: #666;">${transaction.category} • ${transaction.date}</div>
+                    </div>
+                    <div class="transaction-amount ${transaction.amount > 0 ? 'positive' : 'negative'}">
+                        ${transaction.amount > 0 ? '+' : ''}$${Math.abs(transaction.amount).toFixed(2)}
+                    </div>
+                `;
+                list.appendChild(item);
+            });
+        }
+
+        // Clear transaction form
+        function clearTransactionForm() {
+            document.getElementById('transDesc').value = '';
+            document.getElementById('transAmount').value = '';
+            document.getElementById('transCategory').selectedIndex = 0;
+            document.getElementById('transType').selectedIndex = 0;
+        }
+
+        // Add goal functionality
+        function addGoal() {
+            const name = document.getElementById('goalName').value;
+            const target = parseFloat(document.getElementById('goalTarget').value);
+            const current = parseFloat(document.getElementById('goalCurrent').value) || 0;
+            const date = document.getElementById('goalDate').value;
+
+            if (!name || !target || !date) {
+                alert('Please fill in all fields');
+                return;
+            }
+
+            const goal = {
+                id: Date.now(),
+                name: name,
+                target: target,
+                current: current,
+                date: date,
+                progress: (current / target) * 100
+            };
+
+            goals.push(goal);
+            renderGoals();
+            clearGoalForm();
+        }
+
+        // Render goals
+        function renderGoals() {
+            const list = document.getElementById('goalsList');
+            list.innerHTML = '<h3><span class="icon">📋</span>Your Goals</h3>';
+
+            if (goals.length === 0) {
+                list.innerHTML += '<p style="color: #666; font-style: italic;">Your custom goals will appear here...</p>';
+                return;
+            }
+
+            goals.forEach(goal => {
+                const goalElement = document.createElement('div');
+                goalElement.className = 'advice-item';
+                goalElement.innerHTML = `
+                    <strong>${goal.name}</strong>
+                    <div class="metric" style="margin: 10px 0;">
+                        <span>Progress:</span>
+                        <span class="metric-value">$${goal.current.toLocaleString()} / $${goal.target.toLocaleString()}</span>
+                    </div>
+                    <div class="goal-progress">
+                        <div class="goal-progress-bar" style="width: ${goal.progress}%;"></div>
+                    </div>
+                    <p style="margin-top: 10px; font-size: 0.9em;">
+                        ${goal.progress.toFixed(0)}% complete • Target: ${new Date(goal.date).toLocaleDateString()}
